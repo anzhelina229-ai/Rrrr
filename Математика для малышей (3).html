@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Математика для малышей</title>
+<style>
+:root{--bg:#fff7e6;--card:#fff;--text:#2b2b3a;--accent:#ff8a3d;--ok:#3fbf6b;--bad:#ef5350;--btn:#e8f0ff;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#1f1d2b;--card:#2a2840;--text:#f3f0ff;--btn:#3a3760}}
+:root[data-theme="dark"]{--bg:#1f1d2b;--card:#2a2840;--text:#f3f0ff;--btn:#3a3760}
+html,body{margin:0;min-height:100%;background:var(--bg);color:var(--text);font-family:"Trebuchet MS",Verdana,sans-serif}
+.wrap{max-width:520px;margin:0 auto;padding:16px;text-align:center}
+.bar{display:flex;justify-content:space-between;font-size:20px;font-weight:700;margin-bottom:12px}
+.card{background:var(--card);border-radius:24px;padding:20px;box-shadow:0 6px 20px rgba(0,0,0,.12)}
+.q{font-size:26px;font-weight:700;margin:0 0 12px}
+.pics{font-size:36px;line-height:1.3;min-height:120px;word-break:break-all}
+.sum{font-size:56px;font-weight:700;margin:10px 0}
+.opts{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:16px}
+button{font:inherit;font-size:40px;font-weight:700;color:var(--text);background:var(--btn);border:0;border-radius:20px;padding:18px 0;cursor:pointer}
+button.ok{background:var(--ok);color:#fff}
+button.bad{background:var(--bad);color:#fff;animation:sh .4s}
+@keyframes sh{25%{transform:translateX(-8px)}75%{transform:translateX(8px)}}
+.msg{font-size:24px;min-height:36px;margin-top:14px;font-weight:700}
+.big{background:var(--accent);color:#fff;font-size:24px;padding:14px 28px;margin-top:14px}
+.hide{display:none}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="bar"><span id="n">1 / 10</span><span id="st">⭐ 0</span></div>
+  <div class="card" id="game">
+    <p class="q" id="q"></p>
+    <div class="pics" id="pics"></div>
+    <div class="sum hide" id="sum"></div>
+    <div class="opts" id="opts"></div>
+    <div class="msg" id="msg"></div>
+    <button class="big hide" id="next">Дальше ➜</button>
+  </div>
+  <div class="card hide" id="end">
+    <p class="q" id="res"></p>
+    <div class="pics" id="stars" style="min-height:0"></div>
+    <div class="msg" id="mist"></div>
+    <button class="big" id="again">Ещё раз 🔁</button>
+    <button class="big hide" id="fix">Исправить ошибки ✏️</button>
+  </div>
+</div>
+<script>
+const E=["🍎","⭐","🐟","🚗","🎈","🐱","🌸","🍪"];
+let list=[],i=0,score=0,wrong=[],locked=false,total=20;
+const $=id=>document.getElementById(id);
+function rnd(a,b){return Math.floor(Math.random()*(b-a+1))+a}
+function make(k){
+  const m=k<7?5:k<14?7:10;
+  const e=E[rnd(0,E.length-1)];
+  const t=rnd(0,2);
+  if(t===0){const a=rnd(1,m+5);return{q:"Сколько здесь предметов?",pics:e.repeat(a),ans:a}}
+  if(t===1){const a=rnd(1,m),b=rnd(1,m);return{q:"Сколько всего?",pics:e.repeat(a)+" ➕ "+e.repeat(b),sum:a+" + "+b+" = ?",ans:a+b}}
+  const a=rnd(3,m+4),b=rnd(1,a-1);return{q:"Сколько осталось?",pics:e.repeat(a)+" ➖ "+"❌".repeat(b),sum:a+" − "+b+" = ?",ans:a-b}
+}
+function start(qs){list=qs||Array.from({length:total},(_,k)=>make(k));i=0;score=0;wrong=[];
+  $("end").classList.add("hide");$("game").classList.remove("hide");show()}
+function show(){
+  locked=false;const c=list[i];
+  $("n").textContent=(i+1)+" / "+list.length;$("st").textContent="⭐ "+score;
+  $("q").textContent=c.q;$("pics").textContent=c.pics;
+  $("sum").textContent=c.sum||"";$("sum").classList.toggle("hide",!c.sum);
+  $("msg").textContent="";$("next").classList.add("hide");
+  let o=new Set([c.ans]);while(o.size<4){const v=Math.max(0,c.ans+rnd(-3,3));o.add(v)}
+  o=[...o].sort(()=>Math.random()-.5);
+  $("opts").innerHTML="";
+  o.forEach(v=>{const b=document.createElement("button");b.textContent=v;b.onclick=()=>pick(b,v);$("opts").appendChild(b)});
+}
+function pick(b,v){
+  if(locked)return;const c=list[i];
+  if(v===c.ans){locked=true;b.classList.add("ok");score++;$("st").textContent="⭐ "+score;$("msg").textContent="Молодец! 🎉";setTimeout(nextQ,1100)}
+  else{b.classList.add("bad");b.disabled=true;if(!c.err){c.err=true;wrong.push(c)}$("msg").textContent="Попробуй ещё 🙂"}
+}
+function nextQ(){i++;if(i<list.length)show();else finish()}
+function finish(){
+  $("game").classList.add("hide");$("end").classList.remove("hide");
+  $("res").textContent="Ты решил верно "+score+" из "+list.length+"!";
+  $("stars").textContent="⭐".repeat(score);
+  $("mist").textContent=wrong.length?"Ошибки были в "+wrong.length+" задачах":"Без ошибок! 🏆";
+  $("fix").classList.toggle("hide",!wrong.length);
+}
+$("next").onclick=nextQ;
+$("again").onclick=()=>start();
+$("fix").onclick=()=>start(wrong.map(c=>({...c,err:false})));
+start();
+</script>
+</body>
+</html>
